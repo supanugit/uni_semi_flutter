@@ -1,7 +1,7 @@
 name: timetable_projct
 description: "A new Flutter project."
 publish_to: "none"
-version: 0.1.0
+version: 0.2.0
 
 environment:
   sdk: ^3.7.0
@@ -34,7 +34,6 @@ flutter_native_splash:
   android_12:
     image: assets/flash.jpg
     icon_background_color: "#000000"
-
 
 flutter_launcher_icons:
   android: true
