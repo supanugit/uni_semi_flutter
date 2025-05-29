@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:timetable_projct/Screens/about.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EtPage extends StatefulWidget {
   const EtPage({super.key});
@@ -25,10 +27,10 @@ class _EtPageState extends State<EtPage> {
     });
 
     // today = 2;
-    today = DateTime.now().weekday % 7;
+    today = DateTime.now().weekday;
     appBar = "Today's ET Classes";
 
-    if (DateTime.now().hour >= 17) {
+    if (DateTime.now().hour >= 16) {
       today = today + 1;
       appBar = "Tomorrow's ET Classes";
     }
@@ -82,6 +84,19 @@ class _EtPageState extends State<EtPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        splashColor: Colors.deepPurple,
+        tooltip: "Info",
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => About()),
+          );
+        },
+        child: Icon(Icons.info),
+      ),
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
@@ -112,104 +127,112 @@ class _EtPageState extends State<EtPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child:
-            isLoading
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        strokeWidth: 3,
-                        color: Colors.green[700],
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "Loading your schedule...",
-                        style: TextStyle(fontSize: 18, color: Colors.black54),
-                      ),
-                    ],
-                  ),
-                )
-                : hasError
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 60,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        errorMessage,
-                        style: const TextStyle(
-                          fontSize: 18,
+      body: RefreshIndicator(
+        backgroundColor: Colors.green[700],
+        color: Colors.white,
+        onRefresh: fetch,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child:
+              isLoading
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.green[700],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          "Loading your schedule...",
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                  )
+                  : hasError
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
                           color: Colors.red,
-                          fontWeight: FontWeight.w600,
+                          size: 60,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 30),
-                      ElevatedButton.icon(
-                        onPressed: fetch,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text(
-                          'Try Again',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[700],
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 30,
-                            vertical: 14,
+                        const SizedBox(height: 20),
+                        Text(
+                          errorMessage,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton.icon(
+                          onPressed: fetch,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text(
+                            'Try Again',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green[700],
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                )
-                : fdata.isEmpty
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.school_outlined,
-                        size: 80,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "No Class Found!",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black54,
+                      ],
+                    ),
+                  )
+                  : fdata.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.school_outlined,
+                          size: 80,
+                          color: Colors.grey[400],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Enjoy your free time.",
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        const Text(
+                          "No Class Found!",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Enjoy your free time.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: fdata.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = fdata[index];
+                      return _buildClassCard(item, index);
+                    },
                   ),
-                )
-                : ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: fdata.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = fdata[index];
-                    return _buildClassCard(item, index);
-                  },
-                ),
+        ),
       ),
     );
   }
@@ -279,7 +302,7 @@ class _EtPageState extends State<EtPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    item["time"] ?? "Unknown Time",
+                    "${item["day"]} ${item["time"] ?? 'Unknown Time'}",
                     style: TextStyle(fontSize: 16, color: Colors.grey[800]),
                   ),
                 ),
@@ -295,7 +318,7 @@ class _EtPageState extends State<EtPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    "${item["hall"] ?? "Unknown Room"} (Floor ${item["floor"] ?? "?"})",
+                    "${item["hall"] ?? "Unknown Room"} (${item["floor"].isEmpty ? "Unknown Floor" : "Floor ${item["floor"]}"})",
                     style: TextStyle(fontSize: 16, color: Colors.grey[800]),
                   ),
                 ),

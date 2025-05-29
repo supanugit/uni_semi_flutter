@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:timetable_projct/Screens/about.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ItPage extends StatefulWidget {
   const ItPage({super.key});
@@ -24,10 +26,10 @@ class _ItPageState extends State<ItPage> {
       hasError = false;
     });
 
-    today = DateTime.now().weekday % 7;
+    today = DateTime.now().weekday;
     appBar = "Today's IT Classes";
 
-    if (DateTime.now().hour >= 17) {
+    if (DateTime.now().hour >= 16) {
       today += 1;
       appBar = "Tomorrow's IT Classes";
     }
@@ -79,6 +81,19 @@ class _ItPageState extends State<ItPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        splashColor: Colors.deepPurple,
+        tooltip: "Info",
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => About()),
+          );
+        },
+        child: Icon(Icons.info),
+      ),
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
@@ -109,9 +124,14 @@ class _ItPageState extends State<ItPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _buildBodyContent(),
+      body: RefreshIndicator(
+        backgroundColor: Colors.blue,
+        color: Colors.white,
+        onRefresh: fetch,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _buildBodyContent(),
+        ),
       ),
     );
   }
@@ -209,7 +229,11 @@ class _ItPageState extends State<ItPage> {
   Widget _buildClassCard(Map<String, dynamic> item, int index) {
     final subject = item['subject']?.toString() ?? 'No Subject';
     final teacher = item['teacher']?.toString() ?? 'Unknown';
-    final time = item['time']?.toString() ?? 'Not specified';
+    final time =
+        (item['day'] != null && item['time'] != null)
+            ? "${item['day']} ${item['time']}"
+            : 'Not specified';
+
     final classroom = item['hall']?.toString() ?? 'Room not set';
     final floor = item['floor']?.toString() ?? '?';
 

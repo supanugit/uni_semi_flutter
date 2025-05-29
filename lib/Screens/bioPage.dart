@@ -1,7 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:timetable_projct/Screens/allTimetable.dart';
+import 'package:timetable_projct/Screens/about.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BioPage extends StatefulWidget {
   const BioPage({super.key});
@@ -25,15 +26,14 @@ class _BioPageState extends State<BioPage> {
       hasError = false;
     });
 
-    // today = 6;
-    today = DateTime.now().weekday % 7;
+    // today = 2;
+    today = DateTime.now().weekday;
     appBar = "Today's BT Classes";
 
-    if (DateTime.now().hour >= 17) {
+    if (DateTime.now().hour >= 16) {
       today = today + 1;
       appBar = "Tomorrow's BT Classes";
     }
-
     if (today > 5) {
       today = 1;
       appBar = "Monday BT Classes";
@@ -41,7 +41,7 @@ class _BioPageState extends State<BioPage> {
 
     try {
       final res = await dio
-          .get("http://10.0.2.2:3000/api/it?day=$today")
+          .get("https://uni-semi.vercel.app/api/bt?day=$today")
           .timeout(const Duration(seconds: 10));
 
       if (res.data == null || res.data["classDetails"] == null) {
@@ -84,6 +84,19 @@ class _BioPageState extends State<BioPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        splashColor: Colors.deepPurple,
+        tooltip: "Info",
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => About()),
+          );
+        },
+        child: Icon(Icons.info),
+      ),
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
@@ -95,19 +108,14 @@ class _BioPageState extends State<BioPage> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.orange[700],
+        backgroundColor: Colors.orange,
         elevation: 6,
-        shadowColor: Colors.orange.withOpacity(0.6),
+        shadowColor: Colors.green.withOpacity(0.6),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
         ),
         leading: IconButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => Alltimetable()),
-            );
-          },
+          onPressed: () {},
           tooltip: "All TimeTable",
           icon: Icon(Icons.view_list, color: Colors.white),
         ),
@@ -119,107 +127,113 @@ class _BioPageState extends State<BioPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Text(
-            "Still Working!",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Colors.black87,
-              letterSpacing: 1.2,
-            ),
-          ),
+      body: RefreshIndicator(
+        backgroundColor: Colors.orange,
+        color: Colors.white,
+        onRefresh: fetch,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child:
+              isLoading
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          "Loading your schedule...",
+                          style: TextStyle(fontSize: 18, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                  )
+                  : hasError
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 60,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          errorMessage,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 30),
+                        ElevatedButton.icon(
+                          onPressed: fetch,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text(
+                            'Try Again',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : fdata.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.school_outlined,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          "No Class Found!",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "Enjoy your free time.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                  : ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: fdata.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = fdata[index];
+                      return _buildClassCard(item, index);
+                    },
+                  ),
         ),
       ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(strokeWidth: 3, color: Colors.orange[700]),
-          const SizedBox(height: 20),
-          const Text(
-            "Loading your schedule...",
-            style: TextStyle(fontSize: 18, color: Colors.black54),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 60),
-          const SizedBox(height: 20),
-          Text(
-            errorMessage,
-            style: const TextStyle(
-              fontSize: 18,
-              color: Colors.red,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton.icon(
-            onPressed: fetch,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Try Again', style: TextStyle(fontSize: 16)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange[700],
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.school_outlined, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 20),
-          const Text(
-            "No Class Found!",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Enjoy your free time.",
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClassList() {
-    return ListView.separated(
-      physics: const BouncingScrollPhysics(),
-      itemCount: fdata.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = fdata[index];
-        return _buildClassCard(item, index);
-      },
     );
   }
 
@@ -233,7 +247,7 @@ class _BioPageState extends State<BioPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Index + Subject
+            // Title Row with index and subject
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -265,10 +279,10 @@ class _BioPageState extends State<BioPage> {
             ),
             const SizedBox(height: 16),
 
-            // Teacher
+            // Teacher Row
             Row(
               children: [
-                Icon(Icons.person, color: Colors.orange[700], size: 20),
+                Icon(Icons.person, color: Colors.orange, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -278,31 +292,33 @@ class _BioPageState extends State<BioPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 10),
 
-            // Time
+            // Time Row
             Row(
               children: [
-                Icon(Icons.access_time, color: Colors.orange[700], size: 20),
+                Icon(Icons.access_time, color: Colors.orange, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    item["time"] ?? "Unknown Time",
+                    "${item["day"]} ${item["time"] ?? 'Unknown Time'}",
                     style: TextStyle(fontSize: 16, color: Colors.grey[800]),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 10),
 
-            // Location
+            // Location Row
             Row(
               children: [
-                Icon(Icons.location_on, color: Colors.orange[700], size: 20),
+                Icon(Icons.location_on, color: Colors.orange, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    "${item["class"] ?? "Unknown Room"} (Floor ${item["floor"] ?? "?"})",
+                    "${item["hall"] ?? "Unknown Room"} (${item["floor"].isEmpty ? "Unknown Floor" : "Floor ${item["floor"]}"})",
                     style: TextStyle(fontSize: 16, color: Colors.grey[800]),
                   ),
                 ),
